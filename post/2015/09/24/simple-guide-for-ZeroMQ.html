@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>A simple guide for ZeroMQ</title>
+  <meta name="description" content="RPC">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://geeks.juwai.com/post/2015/09/24/simple-guide-for-ZeroMQ.html">
+  <link rel="alternate" type="application/rss+xml" title="Juwai DEV Blog" href="http://geeks.juwai.com/feed.xml" />
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">Juwai DEV Blog</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">A simple guide for ZeroMQ</h1>
+    <p class="post-meta">Sep 24, 2015</p>
+  </header>
+
+  <article class="post-content">
+    <h1 id="rpc">RPC</h1>
+
+<h2 id="definition">Definition</h2>
+
+<h3 id="subroutine">Subroutine</h3>
+
+<p>In different programming languages, a subroutine may be called a <code>procedure</code>, a <code>function</code>, a <code>routine</code>, a <code>method</code>, or a <code>subprogram</code>.</p>
+
+<h3 id="remote-procedure-call">Remote Procedure Call</h3>
+
+<ul>
+  <li>Network</li>
+  <li>function(parameters) -&gt; return</li>
+</ul>
+
+<hr />
+
+<h2 id="component">Component</h2>
+
+<ul>
+  <li>1: ZeroMQ</li>
+  <li>2: MessagePack</li>
+</ul>
+
+<hr />
+
+<h2 id="demo">Demo</h2>
+
+<h3 id="prepare">Prepare</h3>
+
+<ol>
+  <li>
+    <p>make sure everyone connected to the same Wi-Fi</p>
+  </li>
+  <li>
+    <p>Expose a port on your project’s vagrant box(update Vagrant file)</p>
+  </li>
+</ol>
+
+<p><code>
+config.vm.network "forwarded_port", guest: 5555, host: 5555
+</code></p>
+
+<p>and run <code>vagrant reload</code></p>
+
+<ol>
+  <li>Prepare a Python <code>virtual environment</code></li>
+</ol>
+
+<p><code>
+$ vagrant ssh
+$ mkdir /vagrant/rpc_demo
+$ cd /vagrant/rpc_demo
+$ virtualenv .virtualenv
+$ ve pip install msgpack-python pyzmq
+</code></p>
+
+<ol>
+  <li>install packages(*)</li>
+</ol>
+
+<p><code>
+$ vagrant ssh
+$ sudo yum install strace lsof
+</code></p>
+
+<h3 id="check-list">Check List</h3>
+
+<ul>
+  <li><code>php -m</code>(make sure <code>zmq</code> and <code>msgpack</code> exist, should already installed for )</li>
+  <li><code>ve pip freeze</code></li>
+</ul>
+
+<hr />
+
+<h3 id="demo-1">demo 1</h3>
+
+<p>Request - Reply(all PHP)</p>
+
+<ul>
+  <li>client.php</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-php" data-lang="php"><span class="cp">&lt;?php</span>
+
+<span class="nv">$client</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ZMQSocket</span><span class="p">(</span><span class="k">new</span> <span class="nx">ZMQContext</span><span class="p">(),</span> <span class="nx">ZMQ</span><span class="o">::</span><span class="na">SOCKET_REQ</span><span class="p">);</span>
+<span class="nv">$client</span><span class="o">-&gt;</span><span class="na">connect</span><span class="p">(</span><span class="s2">&quot;tcp://127.0.0.1:5555&quot;</span><span class="p">);</span>
+
+<span class="nv">$client</span><span class="o">-&gt;</span><span class="na">send</span><span class="p">(</span><span class="s2">&quot;hello there!&quot;</span><span class="p">);</span>
+<span class="nv">$result</span> <span class="o">=</span> <span class="nv">$client</span><span class="o">-&gt;</span><span class="na">recv</span><span class="p">();</span>
+<span class="k">echo</span> <span class="s2">&quot;Get back message: </span><span class="si">$result\n</span><span class="s2">&quot;</span><span class="p">;</span></code></pre></div>
+
+<ul>
+  <li>server.php</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-php" data-lang="php"><span class="x">$server = new ZMQSocket(new ZMQContext(), ZMQ::SOCKET_REP);</span>
+<span class="x">$server-&gt;bind(&quot;tcp://127.0.0.1:5555&quot;);</span>
+
+<span class="x">while ($message = $server-&gt;recv()) {</span>
+<span class="x">    echo &quot;Get message: $message\n&quot;;</span>
+<span class="x">    /* echo back the message */</span>
+<span class="x">    $server-&gt;send($message);</span>
+<span class="x">}</span></code></pre></div>
+
+<h3 id="demo-2">demo 2</h3>
+
+<p>Request - Reply(PHP + Python)</p>
+
+<ul>
+  <li>
+    <p>what would happen if server go alive after request was already sent</p>
+  </li>
+  <li>
+    <p>client.py</p>
+  </li>
+</ul>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">zmq</span>
+<span class="kn">import</span> <span class="nn">msgpack</span>
+
+<span class="n">ctx</span> <span class="o">=</span> <span class="n">zmq</span><span class="o">.</span><span class="n">Context</span><span class="p">()</span>
+<span class="n">socket</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">zmq</span><span class="o">.</span><span class="n">REQ</span><span class="p">)</span>
+<span class="n">socket</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;tcp://127.0.0.1:5555&quot;</span><span class="p">)</span>
+
+<span class="n">socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s">&#39;hello&#39;</span><span class="p">)</span>
+<span class="n">msg</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></code></pre></div>
+
+<ul>
+  <li>server.php</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-php" data-lang="php"><span class="cp">&lt;?php</span>
+
+<span class="nv">$server</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ZMQSocket</span><span class="p">(</span><span class="k">new</span> <span class="nx">ZMQContext</span><span class="p">(),</span> <span class="nx">ZMQ</span><span class="o">::</span><span class="na">SOCKET_REP</span><span class="p">);</span>
+<span class="nv">$server</span><span class="o">-&gt;</span><span class="na">bind</span><span class="p">(</span><span class="s2">&quot;tcp://127.0.0.1:5555&quot;</span><span class="p">);</span>
+
+<span class="k">while</span> <span class="p">(</span><span class="nv">$message</span> <span class="o">=</span> <span class="nv">$server</span><span class="o">-&gt;</span><span class="na">recv</span><span class="p">())</span> <span class="p">{</span>
+    <span class="k">echo</span> <span class="s2">&quot;Get message: </span><span class="si">$message\n</span><span class="s2">&quot;</span><span class="p">;</span>
+    <span class="cm">/* echo back the message */</span>
+    <span class="nv">$server</span><span class="o">-&gt;</span><span class="na">send</span><span class="p">(</span><span class="nv">$message</span><span class="p">);</span>
+<span class="p">}</span></code></pre></div>
+
+<h3 id="demo-3">demo 3</h3>
+
+<p>Pub - Sub / Push - Pull</p>
+
+<h4 id="pub-sub">Pub Sub</h4>
+
+<ul>
+  <li>producer.php</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-php" data-lang="php"><span class="cp">&lt;?php</span>
+<span class="nv">$producer</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ZMQSocket</span><span class="p">(</span><span class="k">new</span> <span class="nx">ZMQContext</span><span class="p">(),</span> <span class="nx">ZMQ</span><span class="o">::</span><span class="na">SOCKET_PUB</span><span class="p">);</span>
+<span class="nv">$producer</span><span class="o">-&gt;</span><span class="na">bind</span><span class="p">(</span><span class="s2">&quot;tcp://*:5555&quot;</span><span class="p">);</span>
+
+<span class="k">while</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nv">$date</span> <span class="o">=</span> <span class="nb">date</span><span class="p">(</span><span class="s1">&#39;m/d/Y h:i:s a&#39;</span><span class="p">,</span> <span class="nb">time</span><span class="p">());</span>
+    <span class="k">echo</span> <span class="s2">&quot;</span><span class="si">$date</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">;</span>
+    <span class="nv">$producer</span><span class="o">-&gt;</span><span class="na">send</span><span class="p">(</span><span class="nv">$date</span><span class="p">);</span>
+    <span class="nb">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="p">}</span></code></pre></div>
+
+<ul>
+  <li>consumer.php</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-php" data-lang="php"><span class="cp">&lt;?php</span>
+<span class="nv">$consumer</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ZMQSocket</span><span class="p">(</span><span class="k">new</span> <span class="nx">ZMQContext</span><span class="p">(),</span> <span class="nx">ZMQ</span><span class="o">::</span><span class="na">SOCKET_SUB</span><span class="p">);</span>
+
+<span class="nv">$consumer</span><span class="o">-&gt;</span><span class="na">connect</span><span class="p">(</span><span class="s2">&quot;tcp://127.0.0.1:5555&quot;</span><span class="p">);</span>
+<span class="nv">$consumer</span><span class="o">-&gt;</span><span class="na">setSockOpt</span><span class="p">(</span><span class="nx">ZMQ</span><span class="o">::</span><span class="na">SOCKOPT_SUBSCRIBE</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">);</span>
+
+<span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nv">$date</span> <span class="o">=</span> <span class="nv">$consumer</span><span class="o">-&gt;</span><span class="na">recv</span><span class="p">();</span>
+
+    <span class="k">echo</span> <span class="s2">&quot;Get date: </span><span class="si">$date\n</span><span class="s2">&quot;</span><span class="p">;</span>
+<span class="p">}</span></code></pre></div>
+
+<h4 id="push-pull">Push Pull</h4>
+
+<ul>
+  <li>push.php</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-php" data-lang="php"><span class="cp">&lt;?php</span>
+
+<span class="nv">$socket</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ZMQSocket</span><span class="p">(</span><span class="k">new</span> <span class="nx">ZMQContext</span><span class="p">(),</span> <span class="nx">ZMQ</span><span class="o">::</span><span class="na">SOCKET_PUSH</span><span class="p">);</span>
+<span class="nv">$socket</span><span class="o">-&gt;</span><span class="na">bind</span><span class="p">(</span><span class="s2">&quot;tcp://*:5555&quot;</span><span class="p">);</span>
+
+<span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nv">$date</span> <span class="o">=</span> <span class="nb">date</span><span class="p">(</span><span class="s1">&#39;m/d/Y h:i:s a&#39;</span><span class="p">,</span> <span class="nb">time</span><span class="p">());</span>
+
+    <span class="k">echo</span> <span class="s2">&quot;Now is </span><span class="si">$date\n</span><span class="s2">&quot;</span><span class="p">;</span>
+    <span class="nv">$socket</span><span class="o">-&gt;</span><span class="na">send</span><span class="p">(</span><span class="nv">$date</span><span class="p">);</span>
+    <span class="nb">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">);</span>
+<span class="p">}</span></code></pre></div>
+
+<ul>
+  <li>pull.php</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-php" data-lang="php"><span class="cp">&lt;?php</span>
+
+<span class="nv">$socket</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ZMQSocket</span><span class="p">(</span><span class="k">new</span> <span class="nx">ZMQContext</span><span class="p">(),</span> <span class="nx">ZMQ</span><span class="o">::</span><span class="na">SOCKET_PULL</span><span class="p">);</span>
+<span class="nv">$socket</span><span class="o">-&gt;</span><span class="na">connect</span><span class="p">(</span><span class="s1">&#39;tcp://127.0.0.1:5555&#39;</span><span class="p">);</span>
+
+<span class="k">while</span><span class="p">(</span><span class="nv">$message</span> <span class="o">=</span> <span class="nv">$socket</span><span class="o">-&gt;</span><span class="na">recv</span><span class="p">())</span> <span class="p">{</span>
+    <span class="k">echo</span> <span class="s2">&quot;Get back message </span><span class="si">$message\n</span><span class="s2">&quot;</span><span class="p">;</span>
+    <span class="nb">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+<span class="p">}</span></code></pre></div>
+
+<h3 id="demo-4">demo 4</h3>
+
+<p>Request - multiple Reply(make some change to client.php, change server’s reponse to name)</p>
+
+<p>everyone can join us.</p>
+
+<ul>
+  <li>and why we need consul(register and service discover)</li>
+  <li>remember pub/sub? using pub/sub to publish event and consul-template can generate newest rpc config for laravel</li>
+</ul>
+
+<h4 id="clientpy">client.py</h4>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">zmq</span>
+
+<span class="n">ctx</span> <span class="o">=</span> <span class="n">zmq</span><span class="o">.</span><span class="n">Context</span><span class="p">()</span>
+<span class="n">socket</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">zmq</span><span class="o">.</span><span class="n">REQ</span><span class="p">)</span>
+<span class="n">socket</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;tcp://10.168.168.145:5555&quot;</span><span class="p">)</span>
+<span class="n">socket</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;tcp://10.168.168.129:5555&quot;</span><span class="p">)</span>
+<span class="n">socket</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;tcp://10.168.168.157:5555&quot;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">):</span>
+    <span class="n">frame</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;hello&quot;</span><span class="p">)</span>
+    <span class="n">socket</span><span class="o">.</span><span class="n">send_multipart</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+    <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">sleep</span>
+    <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">frame</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">recv_multipart</span><span class="p">()</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span></code></pre></div>
+
+<h3 id="demo-5">demo 5</h3>
+
+<p>MessagePack</p>
+
+<ul>
+  <li>client.py</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">zmq</span>
+<span class="kn">import</span> <span class="nn">msgpack</span>
+
+<span class="n">ctx</span> <span class="o">=</span> <span class="n">zmq</span><span class="o">.</span><span class="n">Context</span><span class="p">()</span>
+<span class="n">socket</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">zmq</span><span class="o">.</span><span class="n">REQ</span><span class="p">)</span>
+<span class="n">socket</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;tcp://127.0.0.1:5555&quot;</span><span class="p">)</span>
+
+<span class="n">socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">msgpack</span><span class="o">.</span><span class="n">packb</span><span class="p">([</span><span class="s">&#39;hello&#39;</span><span class="p">,</span> <span class="s">&#39;world&#39;</span><span class="p">]))</span>
+<span class="n">msg</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">msgpack</span><span class="o">.</span><span class="n">unpackb</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span></code></pre></div>
+
+<ul>
+  <li>server.php</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-php" data-lang="php"><span class="cp">&lt;?php</span>
+
+<span class="nv">$server</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ZMQSocket</span><span class="p">(</span><span class="k">new</span> <span class="nx">ZMQContext</span><span class="p">(),</span> <span class="nx">ZMQ</span><span class="o">::</span><span class="na">SOCKET_REP</span><span class="p">);</span>
+<span class="nv">$server</span><span class="o">-&gt;</span><span class="na">bind</span><span class="p">(</span><span class="s2">&quot;tcp://127.0.0.1:5555&quot;</span><span class="p">);</span>
+
+<span class="k">while</span> <span class="p">(</span><span class="nv">$message</span> <span class="o">=</span> <span class="nv">$server</span><span class="o">-&gt;</span><span class="na">recv</span><span class="p">())</span> <span class="p">{</span>
+    <span class="nv">$data</span> <span class="o">=</span> <span class="nx">msgpack_unpack</span><span class="p">(</span><span class="nv">$message</span><span class="p">);</span>
+    <span class="nb">var_dump</span><span class="p">(</span><span class="nv">$data</span><span class="p">);</span>
+    <span class="nv">$server</span><span class="o">-&gt;</span><span class="na">send</span><span class="p">(</span><span class="nx">msgpack_pack</span><span class="p">(</span><span class="nb">array_reverse</span><span class="p">(</span><span class="nv">$data</span><span class="p">)));</span>
+<span class="p">}</span></code></pre></div>
+
+<h3 id="demo-6">demo 6</h3>
+
+<p>Make a PHP RPC server</p>
+
+<ul>
+  <li>client.py</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">zmq</span>
+<span class="kn">import</span> <span class="nn">msgpack</span>
+
+<span class="n">ctx</span> <span class="o">=</span> <span class="n">zmq</span><span class="o">.</span><span class="n">Context</span><span class="p">()</span>
+<span class="n">socket</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">zmq</span><span class="o">.</span><span class="n">REQ</span><span class="p">)</span>
+<span class="n">socket</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;tcp://127.0.0.1:5555&quot;</span><span class="p">)</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">data</span><span class="p">[</span><span class="s">&#39;function_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;plus&#39;</span>
+<span class="n">data</span><span class="p">[</span><span class="s">&#39;parameters&#39;</span><span class="p">]</span> <span class="o">=</span>  <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="n">socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">msgpack</span><span class="o">.</span><span class="n">packb</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+<span class="n">answer</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">msgpack</span><span class="o">.</span><span class="n">unpackb</span><span class="p">(</span><span class="n">answer</span><span class="p">))</span></code></pre></div>
+
+<ul>
+  <li>server.php</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-php" data-lang="php"><span class="cp">&lt;?php</span>
+<span class="nv">$route</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;plus&#39;</span> <span class="o">=&gt;</span> <span class="k">function</span><span class="p">(</span><span class="k">array</span> <span class="nv">$data</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nb">array_sum</span><span class="p">(</span><span class="nv">$data</span><span class="p">);</span>
+    <span class="p">},</span>
+<span class="p">];</span>
+
+<span class="nv">$server</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ZMQSocket</span><span class="p">(</span><span class="k">new</span> <span class="nx">ZMQContext</span><span class="p">(),</span> <span class="nx">ZMQ</span><span class="o">::</span><span class="na">SOCKET_REP</span><span class="p">);</span>
+<span class="nv">$server</span><span class="o">-&gt;</span><span class="na">bind</span><span class="p">(</span><span class="s2">&quot;tcp://127.0.0.1:5555&quot;</span><span class="p">);</span>
+
+<span class="k">while</span> <span class="p">(</span><span class="nv">$message</span> <span class="o">=</span> <span class="nv">$server</span><span class="o">-&gt;</span><span class="na">recv</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span> <span class="p">{</span>
+    <span class="nv">$data</span> <span class="o">=</span> <span class="nx">msgpack_unpack</span><span class="p">(</span><span class="nv">$message</span><span class="p">);</span>
+    <span class="nv">$func_name</span> <span class="o">=</span> <span class="nv">$data</span><span class="p">[</span><span class="s1">&#39;function_name&#39;</span><span class="p">];</span>
+    <span class="nv">$param</span> <span class="o">=</span> <span class="nv">$data</span><span class="p">[</span><span class="s1">&#39;parameters&#39;</span><span class="p">];</span>
+
+    <span class="nv">$answer</span> <span class="o">=</span> <span class="nv">$route</span><span class="p">[</span><span class="nv">$func_name</span><span class="p">](</span><span class="nv">$param</span><span class="p">);</span>
+
+    <span class="nv">$server</span><span class="o">-&gt;</span><span class="na">send</span><span class="p">(</span><span class="nx">msgpack_pack</span><span class="p">(</span><span class="nv">$answer</span><span class="p">));</span>
+<span class="p">}</span></code></pre></div>
+
+<ul>
+  <li>what’s <code>framework</code>(laravel framework/Zask framework)</li>
+  <li>what’s <code>IoC</code>(inversion of control) and <code>AOP</code></li>
+</ul>
+
+<hr />
+
+<h2 id="reference">Reference</h2>
+
+<ul>
+  <li><a href="http://zguide.zeromq.org/page:all">http://zguide.zeromq.org/page:all</a></li>
+  <li><a href="http://msgpack.org/index.html">http://msgpack.org/index.html</a></li>
+  <li><a href="http://php.net/manual/en/functions.anonymous.php">http://php.net/manual/en/functions.anonymous.php</a></li>
+</ul>
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Juwai DEV Blog</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col  footer-col-1">
+        <ul class="contact-list">
+          <li>Juwai DEV Blog</li>
+          <li><a href="mailto:dev@juwai.com">dev@juwai.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-2">
+        <ul class="social-media-list">
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-3">
+        <p class="text">Awesome! not another Wordpress blog.
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
