@@ -12,19 +12,4 @@ Our awesome blog for Juwai IT team, based on [Jekyll](https://jekyllrb.com/), ho
 
 ### Troubleshoot
 
-If you run into the following error:
-➜  juwai.github.io git:(master) sudo gem install jekyll github-pages
-Password:
-ERROR:  Could not find a valid gem 'jekyll' (>= 0), here is why:
-          Unable to download data from https://rubygems.org/ - Errno::ECONNRESET: Connection reset by peer - SSL_connect (https://rubygems.org/latest_specs.4.8.gz)
-ERROR:  Could not find a valid gem 'github-pages' (>= 0), here is why:
-          Unable to download data from https://rubygems.org/ - Errno::ECONNRESET: Connection reset by peer - SSL_connect (https://rubygems.org/latest_specs.4.8.gz)
-
-please do the following to fix:
-➜  juwai.github.io git:(master) gem sources --remove https://rubygems.org/
-➜  juwai.github.io git:(master) gem sources -a https://ruby.taobao.org/
-➜  juwai.github.io git:(master) gem sources -l
-*** CURRENT SOURCES ***
-https://ruby.taobao.org
-➜  juwai.github.io git:(master) sudo gem install rack
-➜  juwai.github.io git:(master) sudo gem install jekyll github-pages
+The RubyGems Mirror is blocked in China by GFW, please consider use [Taobao RubyGems Mirror](https://ruby.taobao.org/index_en.html).
